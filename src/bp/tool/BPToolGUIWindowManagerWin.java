@@ -16,6 +16,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
+import bp.nativehelper.BPNativeHelpers;
 import bp.os.window.BPWindowHandler_Win;
 import bp.os.window.BPWindowHandler_Win.WindowInfo;
 import bp.ui.actions.BPAction;
@@ -29,7 +30,6 @@ import bp.ui.scomp.BPTextField;
 import bp.ui.table.BPTableFuncsBase;
 import bp.ui.util.UIStd;
 import bp.ui.util.UIUtil;
-import bp.util.ClassUtil;
 
 public class BPToolGUIWindowManagerWin extends BPToolGUIBase<BPToolGUIWindowManagerWin.BPToolGUIContextWMW>
 {
@@ -40,7 +40,7 @@ public class BPToolGUIWindowManagerWin extends BPToolGUIBase<BPToolGUIWindowMana
 
 	protected boolean checkRequirement()
 	{
-		if (ClassUtil.getTClass("com.sun.jna.Native", ClassUtil.getExtensionClassLoader()) != null)
+		if (BPNativeHelpers.hasJNASupport())
 			return true;
 		UIStd.err(new RuntimeException("Need JNA in class path"));
 		return false;

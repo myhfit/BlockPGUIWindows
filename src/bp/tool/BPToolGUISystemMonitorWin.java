@@ -16,6 +16,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
 import bp.config.UIConfigs;
+import bp.nativehelper.BPNativeHelpers;
 import bp.os.monitor.BPOSMonitor;
 import bp.os.monitor.BPOSMonitor.BPOSMonitor_CPU;
 import bp.os.monitor.BPOSMonitor.BPOSMonitor_Memory;
@@ -30,7 +31,6 @@ import bp.ui.scomp.BPMonitorUINumber.MonitorFormatMode;
 import bp.ui.scomp.BPMonitorUINumber.MonitorRenderMode;
 import bp.ui.util.UIStd;
 import bp.ui.util.UIUtil;
-import bp.util.ClassUtil;
 import bp.util.NumberUtil;
 
 public class BPToolGUISystemMonitorWin extends BPToolGUIBase<BPToolGUISystemMonitorWin.BPToolGUIContextSMW>
@@ -47,7 +47,7 @@ public class BPToolGUISystemMonitorWin extends BPToolGUIBase<BPToolGUISystemMoni
 
 	protected boolean checkRequirement()
 	{
-		if (ClassUtil.getTClass("com.sun.jna.Native", ClassUtil.getExtensionClassLoader()) != null)
+		if (BPNativeHelpers.hasJNASupport())
 			return true;
 		UIStd.err(new RuntimeException("Need JNA in class path"));
 		return false;

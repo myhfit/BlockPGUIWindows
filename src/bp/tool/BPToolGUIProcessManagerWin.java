@@ -9,7 +9,6 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Action;
@@ -25,26 +24,24 @@ import bp.BPGUICore;
 import bp.locale.BPLocaleConstCC;
 import bp.locale.BPLocaleConstCoreDict;
 import bp.locale.BPLocaleHelpers;
+import bp.nativehelper.BPNativeHelpers;
 import bp.os.BPOSHandlers_Win;
 import bp.os.process.BPProcessHandler.ProcessInfo;
 import bp.os.process.BPProcessHandler_Win;
-import bp.res.BPResource;
-import bp.res.BPResourceFileSystem;
 import bp.ui.actions.BPAction;
 import bp.ui.actions.BPActionConstCommon;
 import bp.ui.actions.BPActionConstOSManagement;
 import bp.ui.actions.BPActionHelpers;
 import bp.ui.container.BPToolBarSQ;
-import bp.ui.dialog.BPDialogSelectResource2;
-import bp.ui.dialog.BPDialogSelectResource2.SELECTSCOPE;
 import bp.ui.res.icon.BPIconResV;
 import bp.ui.scomp.BPTable;
 import bp.ui.scomp.BPTable.BPTableRendererFileSize;
 import bp.ui.scomp.BPTextField;
-import bp.ui.table.BPTableFuncsBase;
+import bp.ui.table.BPTableFuncsSimple;
+import bp.ui.table.BPTableFuncsSimple.BPTableFuncsValueGetter;
+import bp.ui.util.CommonUIOperations;
 import bp.ui.util.UIStd;
 import bp.ui.util.UIUtil;
-import bp.util.ClassUtil;
 import bp.util.SystemUtil;
 
 public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessManagerWin.BPToolGUIContextPMW>
@@ -56,7 +53,7 @@ public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessMa
 
 	protected boolean checkRequirement()
 	{
-		if (ClassUtil.getTClass("com.sun.jna.Native", ClassUtil.getExtensionClassLoader()) != null)
+		if (BPNativeHelpers.hasJNASupport())
 			return true;
 		UIStd.err(new RuntimeException("Need JNA in class path"));
 		return false;
@@ -74,12 +71,22 @@ public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessMa
 		protected Timer m_timer;
 		protected Action m_actautorefresh;
 		protected WeakReference<Container> m_parref;
+		protected BPTableFuncsValueGetter<ProcessInfo> m_vgetter;
+		
+		public BPToolGUIContextPMW()
+		{
+			m_vgetter=this::getProcessValue;
+		}
 
 		public void initUI(Container par, Object... params)
 		{
 			m_parref = new WeakReference<Container>(par);
 			m_scroll = new JScrollPane();
-			m_tbps = new BPTable<ProcessInfo>(new BPTableFuncsProcessInfo());
+			BPTableFuncsSimple<ProcessInfo> tfuncs = new BPTableFuncsSimple<>();
+			tfuncs.setup(new String[] { "PID", "Filename", "Memory" }, new String[] { "PID", BPLocaleConstCC.FILENAME.text(), BPLocaleHelpers.translate(BPLocaleConstCoreDict.S, "Memory") }, new Class[] { Integer.class, String.class, Long.class });
+			tfuncs.setValueGetter(m_vgetter);
+			tfuncs.setEditable(true);
+			m_tbps = new BPTable<ProcessInfo>(tfuncs);
 			{
 				BPTextField tf = new BPTextField();
 				tf.setMonoFont();
@@ -161,21 +168,9 @@ public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessMa
 
 		protected void onRun(ActionEvent e)
 		{
-			BPDialogSelectResource2 dlg = new BPDialogSelectResource2();
-			dlg.setScope(SELECTSCOPE.COMPUTER);
-			dlg.showOpen();
-			BPResource[] ress = dlg.getSelectedResources();
-			if (ress != null && ress.length > 0)
+			String[] filenames = CommonUIOperations.showOpenFilesDialog(null, null, cb -> cb.setPreSelectedResource(null));
+			if (filenames != null && filenames.length > 0)
 			{
-				List<String> filenames = new ArrayList<String>();
-				for (BPResource res : ress)
-				{
-					if (res.isFileSystem())
-					{
-						BPResourceFileSystem resf = (BPResourceFileSystem) res;
-						filenames.add(resf.getFileFullName());
-					}
-				}
 				for (String filename : filenames)
 				{
 					String workdir = null;
@@ -249,18 +244,8 @@ public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessMa
 		{
 			stopTimer();
 		}
-	}
 
-	protected static class BPTableFuncsProcessInfo extends BPTableFuncsBase<ProcessInfo>
-	{
-		public BPTableFuncsProcessInfo()
-		{
-			m_colnames = new String[] { "PID", "Filename", "Memory" };
-			m_collabels = new String[] { "PID", BPLocaleHelpers.getValue(BPLocaleConstCC.FILENAME), BPLocaleHelpers.translate(BPLocaleConstCoreDict.S, "Memory") };
-			m_cols = new Class[] { Integer.class, String.class, Long.class };
-		}
-
-		public Object getValue(ProcessInfo o, int row, int col)
+		protected Object getProcessValue(ProcessInfo o, int row, int col)
 		{
 			switch (col)
 			{
@@ -278,11 +263,6 @@ public class BPToolGUIProcessManagerWin extends BPToolGUIBase<BPToolGUIProcessMa
 				}
 			}
 			return "";
-		}
-
-		public boolean isEditable(ProcessInfo o, int row, int col)
-		{
-			return true;
 		}
 	}
 }

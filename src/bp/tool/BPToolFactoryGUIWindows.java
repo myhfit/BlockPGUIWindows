@@ -28,6 +28,7 @@ public class BPToolFactoryGUIWindows implements BPToolFactory
 			installfunc.accept(packname, new BPToolGUIProcessManagerWin());
 			installfunc.accept(packname, new BPToolGUISystemMonitorWin());
 			installfunc.accept(packname, new BPToolGUIPowerManagerWin());
+			installfunc.accept(packname, new BPToolGUIRouteTableWin());
 		}
 	}
 }
